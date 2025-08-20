@@ -15,6 +15,9 @@ typedef SwagSong =
 	var speed:Float;
 	var offset:Float;
 
+	//DD: Vocal master volume adjustment
+	var vocalVolume:Float;
+
 	var player1:String;
 	var player2:String;
 	var gfVersion:String;
