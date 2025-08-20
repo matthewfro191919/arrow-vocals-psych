@@ -1263,7 +1263,6 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 
 	    if(!songFinished) Conductor.songPosition = FlxMath.bound(FlxG.sound.music.time + Conductor.offset, 0, FlxG.sound.music.length - 1);
 	    updateScrollY();
-		}
 
 		super.update(elapsed);
 
