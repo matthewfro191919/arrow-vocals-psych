@@ -2,6 +2,7 @@ package states.editors;
 
 import openfl.display.Stage;
 
+import flixel.FlxState;
 import flixel.FlxSubState;
 import flixel.util.FlxSave;
 import flixel.util.FlxSort;
