@@ -37,6 +37,10 @@ class MainMenuState extends MusicBeatState
 	var magenta:FlxSprite;
 	var camFollow:FlxObject;
 
+	var checkArrowVocals:FlxText;
+	var checkTimedVocals:FlxText;
+	var checkPitchShift:FlxText;
+
 	static var showOutdatedWarning:Bool = true;
 	override function create()
 	{
@@ -102,7 +106,25 @@ class MainMenuState extends MusicBeatState
 		fnfVer.scrollFactor.set();
 		fnfVer.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(fnfVer);
+
 		changeItem();
+
+		checkArrowVocals = new FlxText(5, FlxG.height - 110, 0, "", 12);
+		checkArrowVocals.scrollFactor.set();
+		checkArrowVocals.setFormat("VCR OSD Mono", 24, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		add(checkArrowVocals);
+
+		checkTimedVocals = new FlxText(5, FlxG.height - 80, 0, "", 12);
+		checkTimedVocals.scrollFactor.set();
+		checkTimedVocals.setFormat("VCR OSD Mono", 24, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		add(checkTimedVocals);
+
+		checkPitchShift = new FlxText(5, FlxG.height - 50, 0, "", 12);
+		checkPitchShift.scrollFactor.set();
+		checkPitchShift.setFormat("VCR OSD Mono", 24, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		#if (desktop && !hl)
+		add(checkPitchShift);
+		#end
 
 		#if ACHIEVEMENTS_ALLOWED
 		// Unlocks "Freaky on a Friday Night" achievement if it's a Friday and between 18:00 PM and 23:59 PM
@@ -146,6 +168,16 @@ class MainMenuState extends MusicBeatState
 	var timeNotMoving:Float = 0;
 	override function update(elapsed:Float)
 	{
+		checkArrowVocals.text = "Arrow-Based Vocals (Press I to toggle): " + TitleState.arrowVocals;
+
+		checkTimedVocals.text = "Vocals Timed to Key Press (Press O to toggle): " + TitleState.timedVocals;
+
+		checkPitchShift.text = "Speed Changes Don't Affect Pitch (Press P to toggle): ";
+		if (TitleState.pitchShift)
+			checkPitchShift.text += "true (Warning: doesn't sound good)";
+		else
+			checkPitchShift.text += "false";
+		
 		if (FlxG.sound.music.volume < 0.8)
 			FlxG.sound.music.volume = Math.min(FlxG.sound.music.volume + 0.5 * elapsed, 0.8);
 
