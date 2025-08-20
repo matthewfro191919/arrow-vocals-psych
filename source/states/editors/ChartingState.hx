@@ -654,16 +654,16 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		pluckData = SyllableSound.readVorbisFileBuffer(vorb);
 		AL.bufferData(pluckbuffer, AL.FORMAT_STEREO16, pluckData, pluckData.length, 44100);
 		AL.sourcei(pluck, AL.BUFFER, pluckbuffer);
-		dada = new SyllableSound(_song.player2, "a");
-		dadi = new SyllableSound(_song.player2, "i");
-		dadu = new SyllableSound(_song.player2, "u");
-		dade = new SyllableSound(_song.player2, "e");
-		dado = new SyllableSound(_song.player2, "o");
-		bfa = new SyllableSound(_song.player1, "a");
-		bfi = new SyllableSound(_song.player1, "i");
-		bfu = new SyllableSound(_song.player1, "u");
-		bfe = new SyllableSound(_song.player1, "e");
-		bfo = new SyllableSound(_song.player1, "o");
+		dada = new SyllableSound(song.player2, "a");
+		dadi = new SyllableSound(song.player2, "i");
+		dadu = new SyllableSound(song.player2, "u");
+		dade = new SyllableSound(song.player2, "e");
+		dado = new SyllableSound(song.player2, "o");
+		bfa = new SyllableSound(song.player1, "a");
+		bfi = new SyllableSound(song.player1, "i");
+		bfu = new SyllableSound(song.player1, "u");
+		bfe = new SyllableSound(song.player1, "e");
+		bfo = new SyllableSound(song.player1, "o");
 		allSyllableSounds = [dada, dadi, dadu, dade, dado, bfa, bfi, bfu, bfe, bfo];
 
 		Song.chartPath = null;
@@ -940,7 +940,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	    		curSelectedVolume += 0.1;
 	    }
 
-		_song.bpm = tempBpm;
+		song.bpm = tempBpm;
 	
 		/* if (FlxG.keys.justPressed.UP)
 	    	Conductor.changeBPM(Conductor.bpm + 1);
@@ -1029,14 +1029,14 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	    	{
 	    		// DD: Play those vocal samples
 	    		if (!dadSampleMute
-	    	    && ((!_song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
-	    	    	|| (_song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
+	    	    && ((!song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
+	    	    	|| (song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
 	    		{
 	    	    PlayState.handleVocalPlayback(note, dada, dadi, dadu, dade, dado);
 	    		}
 	    		else if (!bfSampleMute
-	    	    && ((_song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
-	    	    	|| (!_song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
+	    	    && ((song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
+	    	    	|| (!song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
 	    		{
 	    	    PlayState.handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo);
 	    		}
