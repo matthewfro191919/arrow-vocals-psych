@@ -38,6 +38,12 @@ typedef NoteSplashData = {
 **/
 class Note extends FlxSprite
 {
+	// DD: Note pitch and other stuff
+	public var notePitch:Float = 1.0;
+	public var noteSyllable:Int = -1;
+	public var holdID:Int = 0;
+	public var noteVolume:Float = 1.0;
+
 	//This is needed for the hardcoded note types to appear on the Chart Editor,
 	//It's also used for backwards compatibility with 0.1 - 0.3.2 charts.
 	public static final defaultNoteTypes:Array<String> = [
@@ -77,6 +83,7 @@ class Note extends FlxSprite
 	public var sustainLength:Float = 0;
 	public var isSustainNote:Bool = false;
 	public var noteType(default, set):String = null;
+	public var samplePlayed = false;
 
 	public var eventName:String = '';
 	public var eventLength:Int = 0;
