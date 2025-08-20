@@ -939,6 +939,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	    		curSelectedVolume += 0.1;
 	    }
 
+		_song.bpm = tempBpm;
+	
 		/* if (FlxG.keys.justPressed.UP)
 	    	Conductor.changeBPM(Conductor.bpm + 1);
 	    if (FlxG.keys.justPressed.DOWN)
