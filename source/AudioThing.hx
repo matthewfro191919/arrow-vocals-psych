@@ -13,6 +13,7 @@ import lime.media.vorbis.VorbisFile;
 import lime.media.openal.AL;
 import lime.media.vorbis.VorbisInfo;
 #end
+import states.TitleState;
 
 class AudioThing extends FlxBasic
 {
