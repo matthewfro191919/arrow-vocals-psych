@@ -56,6 +56,10 @@ class TitleState extends MusicBeatState
 
 	var wackyImage:FlxSprite;
 
+	static public var arrowVocals:Bool = true;
+	static public var timedVocals:Bool = true;
+	static public var pitchShift:Bool = false;
+
 	#if TITLE_SCREEN_EASTER_EGG
 	final easterEggKeys:Array<String> = [
 		'SHADOW', 'RIVEREN', 'BBPANZU', 'PESSY'
@@ -109,6 +113,13 @@ class TitleState extends MusicBeatState
 		else
 			startIntro();
 		#end
+
+		if (FlxG.save.data.pitchShift != null)
+			pitchShift = FlxG.save.data.pitchShift;
+		if (FlxG.save.data.arrowVocals != null)
+			arrowVocals = FlxG.save.data.arrowVocals;
+		if (FlxG.save.data.timedVocals != null)
+			timedVocals = FlxG.save.data.timedVocals;
 	}
 
 	var logoBl:FlxSprite;
