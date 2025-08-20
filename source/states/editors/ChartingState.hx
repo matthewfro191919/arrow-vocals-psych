@@ -195,6 +195,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	var movingNotesLastData:Int = 0;
 	var movingNotesLastY:Float = 0;
 	
+	var _song:SwagSong;
+
 	var vocals:FlxSound = new FlxSound();
 	var opponentVocals:FlxSound = new FlxSound();
 
