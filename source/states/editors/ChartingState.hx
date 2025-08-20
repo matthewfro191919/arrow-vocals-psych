@@ -1,5 +1,7 @@
 package states.editors;
 
+import openfl.display.Stage;
+
 import flixel.FlxSubState;
 import flixel.util.FlxSave;
 import flixel.util.FlxSort;
@@ -32,6 +34,16 @@ import objects.Character;
 import objects.HealthIcon;
 import objects.Note;
 import objects.StrumNote;
+
+// DD: OpenAL stuff
+import lime.media.openal.ALBuffer;
+import lime.media.openal.ALSource;
+import lime.media.openal.ALContext;
+import lime.utils.UInt8Array;
+import lime.media.vorbis.VorbisFile;
+import lime.media.openal.AL;
+import lime.media.openal.ALC;
+import lime.media.openal.ALDevice;
 
 using DateTools;
 
@@ -215,6 +227,35 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	var vortexEnabled:Bool = false;
 	var waveformEnabled:Bool = false;
 	var waveformTarget:WaveformTarget = INST;
+
+	// DD: User-selected pitch value
+	var curSelectedPitch:Float = 1.0;
+	var curSelectedPitchOffset:Float = 0;
+	var curSelectedSyllable:Int = 0;
+	var curSelectedVolume:Float = 1.0;
+
+	// DD: Necessary OpenAL sound stuff
+	var vorb:VorbisFile = VorbisFile.fromFile("assets/shared/sounds/notepluck.ogg");
+	var pluckData:UInt8Array;
+	var pluckbuffer:ALBuffer = AL.createBuffer();
+	var pluck:ALSource = AL.createSource();
+
+	var dada:SyllableSound;
+	var dadi:SyllableSound;
+	var dadu:SyllableSound;
+	var dade:SyllableSound;
+	var dado:SyllableSound;
+
+	var bfa:SyllableSound;
+	var bfi:SyllableSound;
+	var bfu:SyllableSound;
+	var bfe:SyllableSound;
+	var bfo:SyllableSound;
+
+	var allSyllableSounds:Array<SyllableSound>;
+
+	var bfSampleMute = false;
+	var dadSampleMute = false;
 
 	override function create()
 	{
@@ -448,6 +489,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 			vocals.time = opponentVocals.time = FlxG.sound.music.time = Conductor.songPosition - Conductor.offset;
 			if(FlxG.sound.music.time >= vocals.length)
 				vocals.pause();
+				stopSamples();
 			if(FlxG.sound.music.time >= opponentVocals.length)
 				opponentVocals.pause();
 		}
@@ -603,8 +645,26 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 			player2: 'dad',
 			gfVersion: 'gf',
 			stage: 'stage',
-			format: 'psych_v1'
+			format: 'psych_v1',
+			vocalVolume: 1.0
 		};
+
+		// DD: Intialize OpenAL sound stuff
+		pluckData = SyllableSound.readVorbisFileBuffer(vorb);
+		AL.bufferData(pluckbuffer, AL.FORMAT_STEREO16, pluckData, pluckData.length, 44100);
+		AL.sourcei(pluck, AL.BUFFER, pluckbuffer);
+		dada = new SyllableSound(_song.player2, "a");
+		dadi = new SyllableSound(_song.player2, "i");
+		dadu = new SyllableSound(_song.player2, "u");
+		dade = new SyllableSound(_song.player2, "e");
+		dado = new SyllableSound(_song.player2, "o");
+		bfa = new SyllableSound(_song.player1, "a");
+		bfi = new SyllableSound(_song.player1, "i");
+		bfu = new SyllableSound(_song.player1, "u");
+		bfe = new SyllableSound(_song.player1, "e");
+		bfo = new SyllableSound(_song.player1, "o");
+		allSyllableSounds = [dada, dadi, dadu, dade, dado, bfa, bfi, bfu, bfe, bfo];
+
 		Song.chartPath = null;
 		loadChart(song);
 	}
@@ -762,9 +822,229 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 
 		var lastTime:Float = Conductor.songPosition;
 		outputAlpha = Math.max(0, outputAlpha - elapsed);
-		var holdingAlt:Bool = FlxG.keys.pressed.ALT;
+		var holdingAlt:Bool = FlxG.keys.pressed.ALT;		
+	
+	    // DD: Pitch adjustment keys
+			if (FlxG.keys.justPressed.Z)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 0), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.S)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 1), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.X)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 2), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.D)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 3), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.C)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 4), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.V)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 5), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.G)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 6), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.B)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 7), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.H)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 8), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.N)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 9), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.J)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 10), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.M)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 11), 1.0 / 12.0);
+				playPluck();
+			}
+			if (FlxG.keys.justPressed.COMMA)
+			{
+				curSelectedPitch = Math.pow(Math.pow(2, curSelectedPitchOffset + 12), 1.0 / 12.0);
+				playPluck();
+			}
+
+			// DD: Octave adjustment keys
+			if (FlxG.keys.justPressed.RBRACKET)
+			{
+				curSelectedPitchOffset += 12;
+			}
+			if (FlxG.keys.justPressed.LBRACKET)
+			{
+				curSelectedPitchOffset -= 12;
+			}
+
+			// DD: Syllable adjustment keys
+			if (FlxG.keys.justPressed.NUMPADONE || FlxG.keys.justPressed.ONE)
+			{
+				curSelectedSyllable = 0;
+			}
+			if (FlxG.keys.justPressed.NUMPADTWO || FlxG.keys.justPressed.TWO)
+			{
+				curSelectedSyllable = 1;
+			}
+			if (FlxG.keys.justPressed.NUMPADTHREE || FlxG.keys.justPressed.THREE)
+			{
+				curSelectedSyllable = 2;
+			}
+			if (FlxG.keys.justPressed.NUMPADFOUR || FlxG.keys.justPressed.FOUR)
+			{
+				curSelectedSyllable = 3;
+			}
+			if (FlxG.keys.justPressed.NUMPADFIVE || FlxG.keys.justPressed.FIVE)
+			{
+				curSelectedSyllable = 4;
+			}
+			if (FlxG.keys.justPressed.NUMPADSIX || FlxG.keys.justPressed.SIX)
+			{
+				curSelectedSyllable = -1;
+			}
+
+			//DD: Volume adjustment keys
+			if (FlxG.keys.justPressed.SEMICOLON)
+			{
+				if (curSelectedVolume - 0.1 >= 0.0)
+					curSelectedVolume -= 0.1;
+			}
+			if (FlxG.keys.justPressed.QUOTE)
+			{
+				if (curSelectedVolume + 0.1 <= 1.0)
+					curSelectedVolume += 0.1;
+			}
+		}
+
+		_song.bpm = tempBpm;
+
+		/* if (FlxG.keys.justPressed.UP)
+				Conductor.changeBPM(Conductor.bpm + 1);
+			if (FlxG.keys.justPressed.DOWN)
+				Conductor.changeBPM(Conductor.bpm - 1); */
+
+		var shiftThing:Int = 1;
+		if (FlxG.keys.pressed.SHIFT)
+			shiftThing = 4;
+		// DD: Commenting out D and A for now because I need them for pitch shifting.
+		if (FlxG.keys.justPressed.RIGHT /*|| FlxG.keys.justPressed.D*/)
+			changeSection(curSection + shiftThing);
+		if (FlxG.keys.justPressed.LEFT /*|| FlxG.keys.justPressed.A*/)
+			changeSection(curSection - shiftThing);
+
+		var userSyllable:String = "";
+		switch (curSelectedSyllable)
+		{
+			case -1:
+				userSyllable = "Silent";
+			case 0:
+				userSyllable = "A";
+			case 1:
+				userSyllable = "I";
+			case 2:
+				userSyllable = "U";
+			case 3:
+				userSyllable = "E";
+			case 4:
+				userSyllable = "O";
+		}
+
+		var userPitch:String = "";
+		var xvalue:Int = (Math.round(Math.log(Math.pow(curSelectedPitch, 12)) / Math.log(2)));
+		var octavevalue = Math.floor(xvalue / 12);
+		var pitchvalue = (xvalue % 12 >= 0 ? xvalue % 12 : xvalue % 12 + 12);
+
+		switch (pitchvalue)
+		{
+			case 0:
+				userPitch += "C";
+			case 1:
+				userPitch += "C#";
+			case 2:
+				userPitch += "D";
+			case 3:
+				userPitch += "D#";
+			case 4:
+				userPitch += "E";
+			case 5:
+				userPitch += "F";
+			case 6:
+				userPitch += "F#";
+			case 7:
+				userPitch += "G";
+			case 8:
+				userPitch += "G#";
+			case 9:
+				userPitch += "A";
+			case 10:
+				userPitch += "A#";
+			case 11:
+				userPitch += "B";
+		}
+		userPitch = userPitch + " " + octavevalue + " (" + Math.floor(curSelectedPitch * 1000) / 1000.0 + ")";
+
+		bpmTxt.text = bpmTxt.text = Std.string(FlxMath.roundDecimal(Conductor.songPosition / 1000, 2))
+			+ " / "
+			+ Std.string(FlxMath.roundDecimal(FlxG.sound.music.length / 1000, 2))
+			+ "\nSection: "
+			+ curSection
+			+ "\nPending Pitch: "
+			+ userPitch
+			+ "\nPending Octave: "
+			+ curSelectedPitchOffset / 12
+			+ "\nPending Syllable: "
+			+ userSyllable
+			+ "\nPending Volume: "
+			+ curSelectedVolume;
+
 		if(FlxG.sound.music != null)
 		{
+			for (note in curRenderedNotes)
+			{
+				if (note.strumTime - Conductor.songPosition <= 0 && note.strumTime - Conductor.songPosition > -60 && !note.tooLate)
+				{
+					// DD: Play those vocal samples
+					if (!dadSampleMute
+						&& ((!_song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
+							|| (_song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
+					{
+						PlayState.handleVocalPlayback(note, dada, dadi, dadu, dade, dado);
+					}
+					else if (!bfSampleMute
+						&& ((_song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
+							|| (!_song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
+					{
+						PlayState.handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo);
+					}
+
+					note.tooLate = true;
+				}
+			}
+
 			if(PsychUIInputText.focusOn == null) //If not typing anything
 			{
 				if(FlxG.keys.justPressed.F12)
@@ -959,7 +1239,18 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		}
 
 		super.update(elapsed);
-		
+
+		// DD: Update vocal samples
+		for (i in allSyllableSounds)
+		{
+			if (i.isInUse())
+				i.update(FlxG.elapsed * 1000, false);
+		}
+		if (FlxG.sound.muted)
+			AL.sourcef(pluck, AL.GAIN, 0);
+		else
+			AL.sourcef(pluck, AL.GAIN, FlxG.sound.volume);
+
 		if(songFinished)
 		{
 			onSongComplete();
@@ -970,6 +1261,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		{
 			if(FlxG.sound.music.time >= vocals.length)
 				vocals.pause();
+				stopSamples();
 			if(FlxG.sound.music.time >= opponentVocals.length)
 				opponentVocals.pause();
 
@@ -1530,6 +1822,33 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		lastFocus = PsychUIInputText.focusOn;
 	}
 
+	// DD: Plays pluck sound so you know what pitch you selected
+	function playPluck()
+	{
+		AL.sourcef(pluck, AL.PITCH, curSelectedPitch);
+		AL.sourcePlay(pluck);
+	}
+
+	override function switchTo(nextState:FlxState):Bool
+	{
+		// stopSamples();
+		for (i in allSyllableSounds)
+		{
+			i.delete();
+		}
+		return super.switchTo(nextState);
+	}
+
+	// DD: Self-explanatory
+	function stopSamples()
+	{
+		for (i in allSyllableSounds)
+		{
+			i.stop();
+			// i.loopOff();
+		}
+	}
+
 	function moveSelectedNotes(noteData:Int = 0, lastY:Float) //This turns selected notes into moving notes
 	{
 		var originalNotes:Array<MetaNote> = [];
@@ -1839,6 +2158,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 				vocals.volume = 0;
 				vocals.play();
 				vocals.pause();
+		     	stopSamples();
 				vocals.time = time;
 				
 				var oppVocals:Sound = Paths.voices(PlayState.SONG.song, (characterData.vocalsP2 == null || characterData.vocalsP2.length < 1) ? 'Opponent' : characterData.vocalsP2);
@@ -1912,6 +2232,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 			FlxG.sound.music.pause();
 			vocals.pause();
 			opponentVocals.pause();
+			stopSamples();
 		}
 
 		for (note in strumLineNotes)
