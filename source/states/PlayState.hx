@@ -73,6 +73,27 @@ import crowplexus.hscript.Printer;
 **/
 class PlayState extends MusicBeatState
 {
+	// DD: Necessary OpenAL sound stuff
+	var dada = new SyllableSound(SONG.player2, "a");
+	var dadi = new SyllableSound(SONG.player2, "i");
+	var dadu = new SyllableSound(SONG.player2, "u");
+	var dade = new SyllableSound(SONG.player2, "e");
+	var dado = new SyllableSound(SONG.player2, "o");
+
+	var bfa = new SyllableSound(SONG.player1, "a");
+	var bfi = new SyllableSound(SONG.player1, "i");
+	var bfu = new SyllableSound(SONG.player1, "u");
+	var bfe = new SyllableSound(SONG.player1, "e");
+	var bfo = new SyllableSound(SONG.player1, "o");
+	var bfholds:Map<Int, SyllableSound> = new Map<Int, SyllableSound>();
+	var freeID:Int = 1;
+
+	var allSyllableSounds:Array<SyllableSound>;
+
+	// DD: Using custom class for music/vocals for speed change
+	private var musicThing:AudioThing;
+	private var vocalThing:AudioThing;
+
 	public static var STRUM_X = 42;
 	public static var STRUM_X_MIDDLESCROLL = -278;
 
@@ -312,6 +333,13 @@ class PlayState extends MusicBeatState
 		camHUD.bgColor.alpha = 0;
 		camOther.bgColor.alpha = 0;
 
+		// DD: If master vocal volume is null, make it not null
+		var checkifVolumeNull:Null<Float> = SONG.vocalVolume;
+		if (checkifVolumeNull == null)
+		{
+			SONG.vocalVolume = 1.0;
+		}
+
 		FlxG.cameras.add(camHUD, false);
 		FlxG.cameras.add(camOther, false);
 
@@ -320,6 +348,27 @@ class PlayState extends MusicBeatState
 
 		Conductor.mapBPMChanges(SONG);
 		Conductor.bpm = SONG.bpm;
+
+		allSyllableSounds = [dada, dadi, dadu, dade, dado, bfa, bfi, bfu, bfe, bfo];
+
+		// DD: If master vocal volume is null, make it not null
+		var checkifVolumeNull:Null<Float> = SONG.vocalVolume;
+		if (checkifVolumeNull == null)
+		{
+			SONG.vocalVolume = 1.0;
+		}
+
+		// DD: Using custom class for music/vocals here for speed changing.
+		var musicString = "assets/songs/" + PlayState.SONG.song.toLowerCase() + "/Inst." + Paths.SOUND_EXT;
+		musicThing = new AudioThing(musicString);
+		add(musicThing);
+
+		if (SONG.needsVoices || !TitleState.arrowVocals)
+		{
+			var vocalString = "assets/songs/" + PlayState.SONG.song.toLowerCase() + "/Voices." + Paths.SOUND_EXT;
+			vocalThing = new AudioThing(vocalString);
+			add(vocalThing);
+		}
 
 		#if DISCORD_ALLOWED
 		// String that contains the mode defined here so it isn't necessary to call changePresence for each mode
@@ -1235,27 +1284,27 @@ class PlayState extends MusicBeatState
 	{
 		startingSong = false;
 
-		@:privateAccess
-		FlxG.sound.playMusic(inst._sound, 1, false);
-		#if FLX_PITCH FlxG.sound.music.pitch = playbackRate; #end
-		FlxG.sound.music.onComplete = finishSong.bind();
-		vocals.play();
-		opponentVocals.play();
+		if (!paused)
+		{
+			// FlxG.sound.playMusic(Paths.inst(PlayState.SONG.song), 1, false);
 
-		setSongTime(Math.max(0, startOnTime - 500) + Conductor.offset);
-		startOnTime = 0;
+			musicThing.speed = PlayState.SONG.speed;
+			vocalThing.speed = PlayState.SONG.speed;
+			musicThing.play();
 
-		if(paused) {
-			//trace('Oopsie doopsie! Paused sound');
-			FlxG.sound.music.pause();
-			vocals.pause();
-			opponentVocals.pause();
+			if (FlxG.sound.music != null)
+				FlxG.sound.music.stop();
 		}
+
+		// DD: replicating the below in update()
+		// FlxG.sound.music.onComplete = endSong;
+
+		vocalThing.play();
 
 		stagesFunc(function(stage:BaseStage) stage.startSong());
 
 		// Song duration in a float, useful for the time left feature
-		songLength = FlxG.sound.music.length;
+		songLength = musicThing.length;
 		FlxTween.tween(timeBar, {alpha: 1}, 0.5, {ease: FlxEase.circOut});
 		FlxTween.tween(timeTxt, {alpha: 1}, 0.5, {ease: FlxEase.circOut});
 
@@ -1572,14 +1621,15 @@ class PlayState extends MusicBeatState
 		stagesFunc(function(stage:BaseStage) stage.openSubState(SubState));
 		if (paused)
 		{
-			if (FlxG.sound.music != null)
+			if (musicThing != null)
 			{
-				FlxG.sound.music.pause();
-				vocals.pause();
-				opponentVocals.pause();
+				musicThing.pause();
+				vocalThing.pause();
+				// stopSamples();
 			}
-			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if(!tmr.finished) tmr.active = false);
-			FlxTween.globalManager.forEach(function(twn:FlxTween) if(!twn.finished) twn.active = false);
+
+			if (!startTimer.finished)
+				startTimer.active = false;
 		}
 
 		super.openSubState(SubState);
@@ -1593,10 +1643,17 @@ class PlayState extends MusicBeatState
 		stagesFunc(function(stage:BaseStage) stage.closeSubState());
 		if (paused)
 		{
-			if (FlxG.sound.music != null && !startingSong && canResync)
+			if (musicThing != null && !startingSong)
 			{
 				resyncVocals();
 			}
+
+			/*//DD: Unpause vocal samples
+				for (i in allSyllableSounds){
+					if (i.isInUse())
+						i.resume();
+			}*/
+
 			FlxTimer.globalManager.forEach(function(tmr:FlxTimer) if(!tmr.finished) tmr.active = true);
 			FlxTween.globalManager.forEach(function(twn:FlxTween) if(!twn.finished) twn.active = true);
 
@@ -1609,6 +1666,12 @@ class PlayState extends MusicBeatState
 	#if DISCORD_ALLOWED
 	override public function onFocus():Void
 	{
+		if (!startingSong && !paused && !endingSong)
+		{
+			vocalThing.play();
+			musicThing.play();
+		}
+
 		super.onFocus();
 		if (!paused && health > 0)
 		{
@@ -1618,6 +1681,11 @@ class PlayState extends MusicBeatState
 
 	override public function onFocusLost():Void
 	{
+		for (i in allSyllableSounds)
+			i.stop();
+		vocalThing.pause();
+		musicThing.pause();
+
 		super.onFocusLost();
 		if (!paused && health > 0 && autoUpdateRPC)
 		{
@@ -1642,25 +1710,14 @@ class PlayState extends MusicBeatState
 
 	function resyncVocals():Void
 	{
-		if(finishTimer != null) return;
+		vocalThing.pause();
+		musicThing.pause();
+		// stopSamples();
 
-		trace('resynced vocals at ' + Math.floor(Conductor.songPosition));
-
-		FlxG.sound.music.play();
-		#if FLX_PITCH FlxG.sound.music.pitch = playbackRate; #end
-		Conductor.songPosition = FlxG.sound.music.time + Conductor.offset;
-
-		var checkVocals = [vocals, opponentVocals];
-		for (voc in checkVocals)
-		{
-			if (FlxG.sound.music.time < vocals.length)
-			{
-				voc.time = FlxG.sound.music.time;
-				#if FLX_PITCH voc.pitch = playbackRate; #end
-				voc.play();
-			}
-			else voc.pause();
-		}
+		Conductor.songPosition = musicThing.time;
+		vocalThing.time = Conductor.songPosition;
+		musicThing.play();
+		vocalThing.play();
 	}
 
 	public var paused:Bool = false;
@@ -2010,9 +2067,8 @@ class PlayState extends MusicBeatState
 				{
 					gameOverTimer = new FlxTimer().start(GameOverSubstate.deathDelay, function(_)
 					{
-						vocals.stop();
-						opponentVocals.stop();
-						FlxG.sound.music.stop();
+             			vocalThing.stop();
+		             	musicThing.stop();
 						openSubState(new GameOverSubstate(boyfriend));
 						gameOverTimer = null;
 					});
@@ -2396,6 +2452,9 @@ class PlayState extends MusicBeatState
 	public var transitioning = false;
 	public function endSong()
 	{
+		musicThing.volume = 0;
+		vocalThing.volume = 0;
+
 		//Should kill you if you tried to cheat
 		if(!startingSong)
 		{
@@ -2485,7 +2544,7 @@ class PlayState extends MusicBeatState
 					prevCamFollow = camFollow;
 
 					Song.loadFromJson(PlayState.storyPlaylist[0] + difficulty, PlayState.storyPlaylist[0]);
-					FlxG.sound.music.stop();
+	     			musicThing.stop();
 
 					canResync = false;
 					LoadingState.prepareToSong();
@@ -3199,6 +3258,12 @@ class PlayState extends MusicBeatState
 	var lastStepHit:Int = -1;
 	override function stepHit()
 	{
+		if (musicThing == null)
+			return;
+		if (musicThing.time > Conductor.songPosition + 20 || musicThing.time < Conductor.songPosition - 20)
+		{
+			resyncVocals();
+		}
 		super.stepHit();
 
 		if(curStep == lastStepHit) {
