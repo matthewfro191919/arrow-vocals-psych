@@ -5618,6 +5618,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		return [[[0], [0]], [[0], [0]]];
 		#end
 	}
+
 	function changeSection(sec:Int = 0, ?updateMusic:Bool = true):Void
 	{
 		trace('changing section' + sec);
