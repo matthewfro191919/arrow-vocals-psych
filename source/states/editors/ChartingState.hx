@@ -258,6 +258,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	var bfSampleMute = false;
 	var dadSampleMute = false;
 
+	var bpmTxt:FlxText;
+
 	override function create()
 	{
 		if(Difficulty.list.length < 1) Difficulty.resetList();
@@ -5615,5 +5617,40 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		#else
 		return [[[0], [0]], [[0], [0]]];
 		#end
+	}
+	function changeSection(sec:Int = 0, ?updateMusic:Bool = true):Void
+	{
+		trace('changing section' + sec);
+
+		if (_song.notes[sec] != null)
+		{
+			curSection = sec;
+			curSelectedNote = null;
+
+			updateGrid();
+
+			if (updateMusic)
+			{
+				FlxG.sound.music.pause();
+				vocals.pause();
+				stopSamples();
+
+				/*var daNum:Int = 0;
+					var daLength:Float = 0;
+					while (daNum <= sec)
+					{
+						daLength += lengthBpmBullshit();
+						daNum++;
+				}*/
+
+				FlxG.sound.music.time = sectionStartTime();
+				vocals.time = FlxG.sound.music.time;
+				updateCurStep();
+			}
+
+			updateGrid();
+			updateSectionUI();
+			updateNoteUI();
+		}
 	}
 }
