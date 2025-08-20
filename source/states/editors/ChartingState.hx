@@ -658,20 +658,42 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		pluckData = SyllableSound.readVorbisFileBuffer(vorb);
 		AL.bufferData(pluckbuffer, AL.FORMAT_STEREO16, pluckData, pluckData.length, 44100);
 		AL.sourcei(pluck, AL.BUFFER, pluckbuffer);
-		dada = new SyllableSound(song.player2, "a");
-		dadi = new SyllableSound(song.player2, "i");
-		dadu = new SyllableSound(song.player2, "u");
-		dade = new SyllableSound(song.player2, "e");
-		dado = new SyllableSound(song.player2, "o");
-		bfa = new SyllableSound(song.player1, "a");
-		bfi = new SyllableSound(song.player1, "i");
-		bfu = new SyllableSound(song.player1, "u");
-		bfe = new SyllableSound(song.player1, "e");
-		bfo = new SyllableSound(song.player1, "o");
+		dada = new SyllableSound(_song.player2, "a");
+		dadi = new SyllableSound(_song.player2, "i");
+		dadu = new SyllableSound(_song.player2, "u");
+		dade = new SyllableSound(_song.player2, "e");
+		dado = new SyllableSound(_song.player2, "o");
+		bfa = new SyllableSound(_song.player1, "a");
+		bfi = new SyllableSound(_song.player1, "i");
+		bfu = new SyllableSound(_song.player1, "u");
+		bfe = new SyllableSound(_song.player1, "e");
+		bfo = new SyllableSound(_song.player1, "o");
 		allSyllableSounds = [dada, dadi, dadu, dade, dado, bfa, bfi, bfu, bfe, bfo];
 
-		Song.chartPath = null;
-		loadChart(song);
+		FlxG.mouse.visible = true;
+		FlxG.save.bind('funkinarrowvocals');
+
+		tempBpm = _song.bpm;
+
+		addSection();
+
+		// sections = _song.notes;
+
+		updateGrid();
+
+		loadSong(_song.song);
+		Conductor.changeBPM(_song.bpm);
+		Conductor.mapBPMChanges(_song);
+
+		bpmTxt = new FlxText(1000, 50, 0, "", 16);
+		bpmTxt.scrollFactor.set();
+		add(bpmTxt);
+
+		strumLine = new FlxSprite(0, 50).makeGraphic(Std.int(FlxG.width / 2), 4);
+		add(strumLine);
+
+		dummyArrow = new FlxSprite().makeGraphic(GRID_SIZE, GRID_SIZE);
+		add(dummyArrow);
 	}
 
 	function prepareReload()
@@ -1025,29 +1047,30 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	    + "\nPending Volume: "
 	    + curSelectedVolume;
 
-		if(FlxG.sound.music != null)
+		if (FlxG.sound.music.playing)
 		{
-	    for (note in curRenderedNotes)
-	    {
-	    	if (note.strumTime - Conductor.songPosition <= 0 && note.strumTime - Conductor.songPosition > -60 && !note.tooLate)
-	    	{
-	    		// DD: Play those vocal samples
-	    		if (!dadSampleMute
-	    	    && ((!song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
-	    	    	|| (song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
-	    		{
-	    	    PlayState.handleVocalPlayback(note, dada, dadi, dadu, dade, dado);
-	    		}
-	    		else if (!bfSampleMute
-	    	    && ((song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
-	    	    	|| (!song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
-	    		{
-	    	    PlayState.handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo);
-	    		}
+			for (note in curRenderedNotes)
+			{
+				if (note.strumTime - Conductor.songPosition <= 0 && note.strumTime - Conductor.songPosition > -60 && !note.tooLate)
+				{
+					// DD: Play those vocal samples
+					if (!dadSampleMute
+						&& ((!_song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
+							|| (_song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
+					{
+						PlayState.handleVocalPlayback(note, dada, dadi, dadu, dade, dado);
+					}
+					else if (!bfSampleMute
+						&& ((_song.notes[curSection].mustHitSection && note.x <= GRID_SIZE * 3)
+							|| (!_song.notes[curSection].mustHitSection && note.x > GRID_SIZE * 3)))
+					{
+						PlayState.handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo);
+					}
 
-	    		note.tooLate = true;
-	    	}
-	    }
+					note.tooLate = true;
+				}
+			}
+		}
 
 	    if(PsychUIInputText.focusOn == null) //If not typing anything
 	    {
@@ -1247,13 +1270,13 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		// DD: Update vocal samples
 		for (i in allSyllableSounds)
 		{
-	    if (i.isInUse())
-	    	i.update(FlxG.elapsed * 1000, false);
+			if (i.isInUse())
+				i.update(FlxG.elapsed * 1000, false);
 		}
 		if (FlxG.sound.muted)
-	    AL.sourcef(pluck, AL.GAIN, 0);
+			AL.sourcef(pluck, AL.GAIN, 0);
 		else
-	    AL.sourcef(pluck, AL.GAIN, FlxG.sound.volume);
+			AL.sourcef(pluck, AL.GAIN, FlxG.sound.volume);
 
 		if(songFinished)
 		{
