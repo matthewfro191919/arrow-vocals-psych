@@ -186,40 +186,4 @@ class Song
 		}
 		return songJson;
 	}
-
-	function changeSection(sec:Int = 0, ?updateMusic:Bool = true):Void
-	{
-		trace('changing section' + sec);
-
-		if (_song.notes[sec] != null)
-		{
-			curSection = sec;
-			curSelectedNote = null;
-
-			updateGrid();
-
-			if (updateMusic)
-			{
-				FlxG.sound.music.pause();
-				vocals.pause();
-				stopSamples();
-
-				/*var daNum:Int = 0;
-					var daLength:Float = 0;
-					while (daNum <= sec)
-					{
-						daLength += lengthBpmBullshit();
-						daNum++;
-				}*/
-
-				FlxG.sound.music.time = sectionStartTime();
-				vocals.time = FlxG.sound.music.time;
-				updateCurStep();
-			}
-
-			updateGrid();
-			updateSectionUI();
-			updateNoteUI();
-		}
-	}
 }
