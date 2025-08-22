@@ -1846,6 +1846,23 @@ class PlayState extends MusicBeatState
 				var index:Int = unspawnNotes.indexOf(dunceNote);
 				unspawnNotes.splice(index, 1);
 			}
+
+			notes.forEachAlive(function(daNote:Note)
+			{
+				// DD: Play vocal samples for player2
+				if (!daNote.samplePlayed && !daNote.mustPress && daNote.strumTime - Conductor.songPosition <= 0)
+				{
+					handleVocalPlayback(daNote, dada, dadi, dadu, dade, dado);
+					daNote.samplePlayed = true;
+				}
+
+				// DD: Vocal playback for BF is timed vocals are turned off
+				if (!daNote.samplePlayed && daNote.mustPress && !TitleState.timedVocals && daNote.strumTime - Conductor.songPosition <= 0)
+				{
+					handleVocalPlayback(daNote, bfa, bfi, bfu, bfe, bfo);
+					daNote.samplePlayed = true;
+				}
+			});
 		}
 
 		if (generatedMusic)
@@ -3179,6 +3196,64 @@ class PlayState extends MusicBeatState
 		var result:Dynamic = callOnLuas('goodNoteHit', [notes.members.indexOf(note), leData, leType, isSus]);
 		if(result != LuaUtils.Function_Stop && result != LuaUtils.Function_StopHScript && result != LuaUtils.Function_StopAll) callOnHScript('goodNoteHit', [note]);
 		if(!note.isSustainNote) invalidateNote(note);
+	}
+
+	public static function handleVocalPlayback(note:Note, asource:SyllableSound, isource:SyllableSound, usource:SyllableSound, esource:SyllableSound,
+			osource:SyllableSound, holds:Map<Int, SyllableSound> = null)
+	{
+		if (!TitleState.arrowVocals)
+			return;
+
+		var playsnd:SyllableSound = asource;
+
+		switch (note.noteSyllable)
+		{
+			case -1:
+				return;
+			case 0:
+				playsnd = asource;
+			case 1:
+				playsnd = isource;
+			case 2:
+				playsnd = usource;
+			case 3:
+				playsnd = esource;
+			case 4:
+				playsnd = osource;
+		}
+
+		// DD: Stop all other playing sounds (per player) to prevent them playing over each other
+		// Unless it's a sustain note trail
+		if (!note.isSustainNote)
+		{
+			for (i in [asource, isource, usource, esource, osource])
+			{
+				if (i.isInUse())
+					i.stop();
+			}
+		}
+
+		// DD: The sole reason why I have to mess with OpenAL directly. Sound pitch adjustment.
+		var desiredPitch = note.notePitch;
+		playsnd.setPitch(desiredPitch);
+
+		// DD: Set volume of note too
+		playsnd.setVolume(note.noteVolume);
+
+		if (note.sustainLength > 0)
+		{
+			if (!playsnd.isInUse())
+			{
+				// playsnd.loopOn();
+				if (holds != null)
+					holds[note.holdID] = playsnd;
+				playsnd.play((note.sustainLength + Conductor.stepCrochet) * (1 / Conductor.playbackSpeed));
+			}
+		}
+		else
+		{
+			playsnd.play(Conductor.stepCrochet * (1 / Conductor.playbackSpeed));
+		}
 	}
 
 	public function invalidateNote(note:Note):Void {
